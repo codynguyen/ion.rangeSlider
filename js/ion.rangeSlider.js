@@ -8,6 +8,8 @@
 //
 // Released under MIT licence:
 // http://ionden.com/a/plugins/licence-en.html
+//
+// Modified to be used in Wealthica
 // =====================================================================================================================
 
 ;(function ($, document, window, navigator, undefined) {
@@ -1511,6 +1513,28 @@
             return n.replace(/(\d{1,3}(?=(?:\d\d\d)+(?!\d)))/g, "$1" + this.options.prettify_separator);
         },
 
+        _prettifyLabels: function (num) {
+            if (this.options.prettifyLabels && typeof this.options.prettifyLabels === "function") {
+                return this.options.prettifyLabels(num);
+            } else {
+                return this._prettify(num);
+            }
+        }, // WEALTHICA
+
+        _additionalGridLineClass: function (num) {
+            if (this.options.additionalGridLineClass && typeof this.options.additionalGridLineClass === "function") {
+                return this.options.additionalGridLineClass(num);
+            }
+        }, // WEALTHICA
+
+        _willRenderGridLine: function (num) {
+            if (this.options.willRenderGridLine && typeof this.options.willRenderGridLine === "function") {
+                return this.options.willRenderGridLine(num);
+            } else {
+                return true;
+            }
+        }, // WEALTHICA
+
         checkEdges: function (left, width) {
             if (!this.options.force_edges) {
                 return this.toFixed(left);
@@ -1760,6 +1784,8 @@
                 big_p = this.toFixed(100 / big_num);
             }
 
+            console.log('total: ', total, ', big_num: ', big_num, ', big_p: ', big_p, o.step);
+
             if (big_num > 4) {
                 small_max = 3;
             }
@@ -1800,16 +1826,25 @@
                     html += '<span class="irs-grid-pol small" style="left: ' + small_w + '%"></span>';
                 }
 
-                html += '<span class="irs-grid-pol" style="left: ' + big_w + '%"></span>';
-
                 result = this.calcReal(big_w);
+
+                // WEALTHICA:
+                // Whether to render line, and if yes, long line or short line
+                if (this._willRenderGridLine(result))
+                    html += '<span class="irs-grid-pol ' + this._additionalGridLineClass(result) + '" style="left: ' + big_w + '%"></span>';
+
                 if (o.values.length) {
                     result = o.p_values[result];
                 } else {
-                    result = this._prettify(result);
+                    result = this._prettifyLabels(result);
                 }
 
-                html += '<span class="irs-grid-text js-grid-text-' + i + '" style="left: ' + big_w + '%">' + result + '</span>';
+                // WEALTHICA:
+                // Do not render blank labels for better performance
+                if (result !== '') {
+                    html += '<span class="irs-grid-text js-grid-text-' + i + '" style="left: ' + big_w + '%">' + result + '</span>';
+                }
+
             }
             this.coords.big_num = Math.ceil(big_num + 1);
 
@@ -1861,11 +1896,22 @@
                 }
             }
 
-            this.calcGridCollision(2, start, finish);
-            this.calcGridCollision(4, start, finish);
+            // WEALTHICA:
+            // Since we already hid all blank labels, no need to be afraid of
+            // label collision
+            if (false) {
+                this.calcGridCollision(2, start, finish);
+                this.calcGridCollision(4, start, finish);
+            }
+
 
             for (i = 0; i < num; i++) {
                 label = this.$cache.grid_labels[i][0];
+
+                // WEALTHICA:
+                // Since we do not render blank label, skip if encounter one
+                if (!label) continue;
+
                 label.style.marginLeft = -this.coords.big_x[i] + "%";
             }
         },
