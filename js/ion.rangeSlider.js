@@ -113,6 +113,7 @@
 
     var base_html =
         '<span class="irs">' +
+        '<span class="irs-quick-grid"></span>' +
         '<span class="irs-line" tabindex="-1"><span class="irs-line-left"></span><span class="irs-line-mid"></span><span class="irs-line-right"></span></span>' +
         '<span class="irs-min">0</span><span class="irs-max">1</span>' +
         '<span class="irs-from">0</span><span class="irs-to">0</span><span class="irs-single">0</span>' +
@@ -188,7 +189,8 @@
             shad_to: null,
             edge: null,
             grid: null,
-            grid_labels: []
+            grid_labels: [],
+            quick_grid_labels: []
         };
 
         // get config data attributes
@@ -444,6 +446,7 @@
             this.$cache.bar = this.$cache.cont.find(".irs-bar");
             this.$cache.line = this.$cache.cont.find(".irs-line");
             this.$cache.grid = this.$cache.cont.find(".irs-grid");
+            this.$cache.quick_grid = this.$cache.cont.find(".irs-quick-grid");
 
             if (this.options.type === "single") {
                 this.$cache.cont.append(single_html);
@@ -516,6 +519,7 @@
             }
 
             this.$cache.grid_labels = [];
+            this.$cache.quick_grid_labels = [];
             this.coords.big = [];
             this.coords.big_w = [];
             this.coords.big_p = [];
@@ -1535,6 +1539,22 @@
             }
         }, // WEALTHICA
 
+        _willRenderQuickGridLabel: function (num) {
+            if (this.options.willRenderQuickGridLabel && typeof this.options.willRenderQuickGridLabel === "function") {
+                return this.options.willRenderQuickGridLabel(num);
+            } else {
+                return false;
+            }
+        }, // WEALTHICA
+
+        _prettifyQuickGridLabels: function (num) {
+            if (this.options.prettifyQuickGridLabels && typeof this.options.prettifyQuickGridLabels === "function") {
+                return this.options.prettifyQuickGridLabels(num);
+            } else {
+                return this._prettifyLabels(num);
+            }
+        }, // WEALTHICA
+
         checkEdges: function (left, width) {
             if (!this.options.force_edges) {
                 return this.toFixed(left);
@@ -1833,6 +1853,9 @@
                 if (this._willRenderGridLine(result))
                     html += '<span class="irs-grid-pol ' + this._additionalGridLineClass(result) + '" style="left: ' + big_w + '%"></span>';
 
+                if (this._willRenderQuickGridLabel(result))
+                    this.$cache.quick_grid.prepend($('<span class="irs-quick-grid-text js-quick-grid-text-' + i + '" style="left: ' + big_w + '%"' + '>' + this._prettifyQuickGridLabels(result) + '</span>'))
+
                 if (o.values.length) {
                     result = o.p_values[result];
                 } else {
@@ -1841,14 +1864,14 @@
 
                 // WEALTHICA:
                 // Do not render blank labels for better performance
-                if (result !== '') {
+                if (result) {
                     html += '<span class="irs-grid-text js-grid-text-' + i + '" style="left: ' + big_w + '%">' + result + '</span>';
                 }
 
+
+
             }
             this.coords.big_num = Math.ceil(big_num + 1);
-
-
 
             this.$cache.cont.addClass("irs-with-grid");
             this.$cache.grid.html(html);
@@ -1862,13 +1885,16 @@
             for (i = 0; i < num; i++) {
                 $label = this.$cache.grid.find(".js-grid-text-" + i);
                 this.$cache.grid_labels.push($label);
+
+                $label = this.$cache.quick_grid.find(".js-quick-grid-text-" + i);
+                this.$cache.quick_grid_labels.push($label);
             }
 
             this.calcGridLabels();
         },
 
         calcGridLabels: function () {
-            var i, label, start = [], finish = [],
+            var i, label, quick_label, start = [], finish = [],
                 num = this.coords.big_num;
 
             for (i = 0; i < num; i++) {
@@ -1910,9 +1936,13 @@
 
                 // WEALTHICA:
                 // Since we do not render blank label, skip if encounter one
-                if (!label) continue;
+                if (label)
+                    label.style.marginLeft = -this.coords.big_x[i] + "%";
 
-                label.style.marginLeft = -this.coords.big_x[i] + "%";
+                quick_label = this.$cache.quick_grid_labels[i][0];
+
+                if (quick_label)
+                    quick_label.style.marginLeft = -this.coords.big_x[i] + "%";
             }
         },
 
@@ -1958,6 +1988,9 @@
 
             this.$cache.grid[0].style.width = this.toFixed(100 - this.coords.p_handle) + "%";
             this.$cache.grid[0].style.left = this.coords.grid_gap + "%";
+
+            this.$cache.quick_grid[0].style.width = this.toFixed(100 - this.coords.p_handle) + "%";
+            this.$cache.quick_grid[0].style.left = this.coords.grid_gap + "%";
         },
 
 
