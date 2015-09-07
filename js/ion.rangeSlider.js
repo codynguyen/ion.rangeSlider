@@ -506,6 +506,7 @@
             this.$cache.cont = null;
 
             this.$cache.line.off("keydown.irs_" + this.plugin_count);
+            this.$cache.grid.off("click");
 
             this.$cache.body.off("touchmove.irs_" + this.plugin_count);
             this.$cache.body.off("mousemove.irs_" + this.plugin_count);
@@ -537,6 +538,11 @@
 
             this.$cache.line.on("touchstart.irs_" + this.plugin_count, this.pointerClick.bind(this, "click"));
             this.$cache.line.on("mousedown.irs_" + this.plugin_count, this.pointerClick.bind(this, "click"));
+
+            var that = this;
+            this.$cache.grid.on("click", ".irs-grid-text", function(event) {
+                that._onLabelClick(event, $(this).data('result'));
+            });
 
             if (this.options.drag_interval && this.options.type === "double") {
                 this.$cache.bar.on("touchstart.irs_" + this.plugin_count, this.pointerDown.bind(this, "both"));
@@ -1525,6 +1531,12 @@
             }
         }, // WEALTHICA
 
+        _onLabelClick: function (event, result) {
+            if (this.options.onLabelClick && typeof this.options.onLabelClick === "function") {
+                this.options.onLabelClick(this.$cache.input.data('ionRangeSlider'), event, +result);
+            }
+        }, // WEALTHICA
+
         _additionalGridLineClass: function (num) {
             if (this.options.additionalGridLineClass && typeof this.options.additionalGridLineClass === "function") {
                 return this.options.additionalGridLineClass(num);
@@ -1877,7 +1889,7 @@
                 // WEALTHICA:
                 // Do not render blank labels for better performance
                 if (result) {
-                    html += '<span class="irs-grid-text js-grid-text-' + i + '" style="left: ' + big_w + '%">' + result + '</span>';
+                    html += '<span class="irs-grid-text js-grid-text-' + i + '" style="left: ' + big_w + '%" data-result="' + this.calcReal(big_w) + '">' + result + '</span>';
                 }
 
 
