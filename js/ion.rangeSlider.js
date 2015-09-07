@@ -1555,6 +1555,12 @@
             }
         }, // WEALTHICA
 
+        _onQuickGridLabelClick: function (event) {
+            if (this.options.onQuickGridLabelClick && typeof this.options.onQuickGridLabelClick === "function") {
+                this.options.onQuickGridLabelClick(this.$cache.input.data('ionRangeSlider'), event, event.data);
+            }
+        }, // WEALTHICA
+
         checkEdges: function (left, width) {
             if (!this.options.force_edges) {
                 return this.toFixed(left);
@@ -1804,8 +1810,6 @@
                 big_p = this.toFixed(100 / big_num);
             }
 
-            console.log('total: ', total, ', big_num: ', big_num, ', big_p: ', big_p, o.step);
-
             if (big_num > 4) {
                 small_max = 3;
             }
@@ -1850,11 +1854,19 @@
 
                 // WEALTHICA:
                 // Whether to render line, and if yes, long line or short line
-                if (this._willRenderGridLine(result))
+                if (this._willRenderGridLine(result)) {
                     html += '<span class="irs-grid-pol ' + this._additionalGridLineClass(result) + '" style="left: ' + big_w + '%"></span>';
+                }
 
-                if (this._willRenderQuickGridLabel(result))
-                    this.$cache.quick_grid.prepend($('<span class="irs-quick-grid-text js-quick-grid-text-' + i + '" style="left: ' + big_w + '%"' + '>' + this._prettifyQuickGridLabels(result) + '</span>'))
+                if (this._willRenderQuickGridLabel(result)) {
+                    var label = $('<span class="irs-quick-grid-text js-quick-grid-text-' + i + '" style="left: ' + big_w + '%"' + '>' + this._prettifyQuickGridLabels(result) + '</span>');
+                    this.$cache.quick_grid.prepend(label);
+
+                    var that = this;
+                    label.on('click', null, result, function(event) {
+                        that._onQuickGridLabelClick(event);
+                    });
+                }
 
                 if (o.values.length) {
                     result = o.p_values[result];
